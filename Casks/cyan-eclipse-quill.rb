@@ -15,6 +15,10 @@ cask "cyan-eclipse-quill" do
   desc "Free AI-native text editor (unsigned, unnotarized build)"
   homepage "https://cetech.ai"
 
+  livecheck do
+    skip "Version is pinned to the firm's published downloads; new versions are cut deliberately"
+  end
+
   depends_on macos: ">= :big_sur"
 
   app "CyanEclipseQuill.app"
