@@ -19,6 +19,9 @@ jobs:
       - name: Tap from GitHub
         run: brew tap cyan-eclipse-technologies-llc/cyan-eclipse
 
+      - name: Trust the tap (current Homebrew refuses untrusted taps)
+        run: brew trust cyan-eclipse-technologies-llc/cyan-eclipse
+
       - name: Audit casks (online)
         run: |
           brew audit --cask --online \
