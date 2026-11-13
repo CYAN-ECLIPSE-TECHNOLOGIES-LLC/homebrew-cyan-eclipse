@@ -25,6 +25,9 @@ jobs:
       - name: Tap the published tap
         run: brew tap cyan-eclipse-technologies-llc/cyan-eclipse
 
+      - name: Trust the tap (current Homebrew refuses untrusted taps)
+        run: brew trust cyan-eclipse-technologies-llc/cyan-eclipse
+
       - name: Audit the formula
         run: brew audit --formula --online cyan-eclipse-technologies-llc/cyan-eclipse/eclipse-indigo
 
