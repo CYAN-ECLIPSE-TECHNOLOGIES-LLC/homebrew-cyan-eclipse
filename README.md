@@ -1,6 +1,12 @@
 # Cyan Eclipse Homebrew Tap
 
-Homebrew tap for the macOS applications of Cyan Eclipse Technologies LLC.
+The Homebrew tap of Cyan Eclipse Technologies LLC. It carries both kinds
+of Homebrew package:
+
+- Casks for our Mac applications (Obscura, Quill, and Muster as its
+  release lands).
+- Formulas for our command-line servers — the first is Cyan Eclipse
+  Indigo (see below).
 
 ## Install
 
@@ -8,40 +14,55 @@ Tap once:
 
     brew tap cyan-eclipse-technologies-llc/cyan-eclipse
 
-Then install any application:
+Then install what you need.
+
+## Mac applications (casks)
 
     brew install --cask cyan-eclipse-obscura
     brew install --cask cyan-eclipse-quill
-
-## Available casks
 
 | Cask | Application | Version |
 | --- | --- | --- |
 | cyan-eclipse-obscura | Cyan Eclipse Obscura — mandate-gated remote access client | 0.1.0 |
 | cyan-eclipse-quill | Cyan Eclipse Quill — free AI-native text editor | 0.1.0 |
 
-Cyan Eclipse Muster joins this tap when its first macOS release artefact is
-published.
+Cyan Eclipse Muster joins this tap when its first macOS release artefact
+is published.
 
-## Unsigned applications — read before first launch
+## Command-line servers (formulas)
 
-Our macOS applications are currently UNSIGNED and not notarized. Apple
-Developer enrollment is paused, and until it resumes there is no signing
-identity and no notarization for these builds.
+Formulas install without the --cask flag:
 
-What that means for you: macOS Gatekeeper will refuse the first launch. To
-open an app the first time, right-click (Control-click) the app in
-/Applications and choose Open, then confirm; or launch it once and allow it
-under System Settings > Privacy & Security. Later launches open normally.
+    brew install cyan-eclipse-indigo
 
-Every cask in this tap pins the exact SHA-256 checksum of the release
-artefact it installs. Homebrew verifies the download against that checksum
-before installing, so the bytes you run are verifiably the bytes we
-published — the checksum is the integrity guarantee while the builds are
-unsigned.
+The first formula in this tap is cyan-eclipse-indigo: the Cyan Eclipse
+Indigo MCP server, a command-line build pinned to its release artefact by
+checksum like everything else here. It joins the tap with Indigo's first
+tap release — if brew reports the formula unavailable, that release has
+not landed yet. More of the firm's command-line servers follow the same
+route.
+
+## Unsigned builds — read before first launch
+
+Our macOS application builds are currently UNSIGNED and not notarized.
+Apple Developer enrollment is paused, and until it resumes there is no
+signing identity and no notarization for these builds. The formula
+artefacts are likewise unsigned builds.
+
+What that means for you: macOS Gatekeeper will refuse an app's first
+launch. To open an app the first time, right-click (Control-click) the
+app in /Applications and choose Open, then confirm; or launch it once
+and allow it under System Settings > Privacy & Security. Later launches
+open normally.
+
+Every cask and formula in this tap pins the exact SHA-256 checksum of
+the release artefact it installs. Homebrew verifies the download against
+that checksum before installing, so the bytes you run are verifiably the
+bytes we published — the checksum is the integrity guarantee while the
+builds are unsigned.
 
 ## License
 
-The tap definitions in this repository are MIT-licensed (see LICENSE). The
-applications they install are products of Cyan Eclipse Technologies LLC and
-carry their own terms, shown in each product.
+The tap definitions in this repository are MIT-licensed (see LICENSE).
+The applications and servers they install are products of Cyan Eclipse
+Technologies LLC and carry their own terms, shown in each product.
