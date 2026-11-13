@@ -1,0 +1,36 @@
+name: proof
+
+# Clean-machine proof for this tap: on a stock macOS runner, tap from
+# GitHub exactly as a user would, audit every cask, install each one,
+# and confirm the applications land in /Applications.
+# Manual dispatch only — runs cost macOS minutes.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  proof:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - name: Tap from GitHub
+        run: brew tap cyan-eclipse-technologies-llc/cyan-eclipse
+
+      - name: Audit casks (online)
+        run: |
+          brew audit --cask --online \
+            cyan-eclipse-technologies-llc/cyan-eclipse/cyan-eclipse-obscura \
+            cyan-eclipse-technologies-llc/cyan-eclipse/cyan-eclipse-quill
+
+      - name: Install Obscura
+        run: brew install --cask cyan-eclipse-obscura
+
+      - name: Install Quill
+        run: brew install --cask cyan-eclipse-quill
+
+      - name: Verify applications present
+        run: |
+          test -d "/Applications/Obscura.app"
+          test -d "/Applications/Cyan Eclipse Quill.app"
+          ls -la /Applications | grep -E "Obscura|Quill"
+          echo "PROOF OK: both applications installed from the published tap"
