@@ -41,7 +41,7 @@ jobs:
       - name: Verify applications present
         run: |
           test -d "/Applications/Obscura.app"
-          test -d "/Applications/Cyan Eclipse Quill.app"
+          test -d "/Applications/CyanEclipseQuill.app"
           test -d "/Applications/CyanEclipseMuster.app"
           ls -la /Applications | grep -E "Obscura|Quill|Muster"
           echo "PROOF OK: all applications installed from the published tap"
