@@ -1,0 +1,57 @@
+name: Indigo formula proof
+
+# Proves the EclipseIndigo formula end to end on a clean macOS runner:
+# tap this repository from GitHub, audit the formula, install it from
+# the tap, and run the installed binary's own test block plus a direct
+# MCP stdio probe (initialize + tools/list + policy_show).
+# Manual dispatch only — the tap's cask proof workflow stays separate.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: indigo-formula-proof-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  formula-proof:
+    name: brew tap + audit + install eclipse-indigo (macos-15)
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - name: Tap the published tap
+        run: brew tap cyan-eclipse-technologies-llc/cyan-eclipse
+
+      - name: Audit the formula
+        run: brew audit --formula --online cyan-eclipse-technologies-llc/cyan-eclipse/eclipse-indigo
+
+      - name: Install the formula from the tap
+        run: brew install cyan-eclipse-technologies-llc/cyan-eclipse/eclipse-indigo
+
+      - name: Run the formula test block
+        run: brew test cyan-eclipse-technologies-llc/cyan-eclipse/eclipse-indigo
+
+      - name: Direct MCP probe of the installed binary
+        run: |
+          export ECLIPSE_INDIGO_STATE="$RUNNER_TEMP/indigo-state.json"
+          BIN="$(brew --prefix)/bin/eclipse-indigo"
+          test -x "$BIN"
+          printf '%s\n' \
+            '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"ci-probe","version":"0"}}}' \
+            '{"jsonrpc":"2.0","method":"notifications/initialized"}' \
+            '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' \
+            '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"policy_show","arguments":{}}}' \
+            | "$BIN" > "$RUNNER_TEMP/probe.jsonl"
+          python3 - "$RUNNER_TEMP/probe.jsonl" <<'PY'
+          import json, sys
+          lines = [json.loads(l) for l in open(sys.argv[1])]
+          tools = [l for l in lines if l.get("id") == 2][0]["result"]["tools"]
+          assert len(tools) == 14, f"expected 14 tools, got {len(tools)}"
+          pol = json.dumps([l for l in lines if l.get("id") == 3][0]["result"])
+          assert '"provider": "fixture"' in pol or 'provider' in pol
+          assert 'live_verified' in pol
+          print("PROBE OK: 14 tools, policy_show answered")
+          PY
