@@ -17,7 +17,7 @@ cask "cyan-eclipse-quill" do
 
   depends_on macos: ">= :big_sur"
 
-  app "Cyan Eclipse Quill.app"
+  app "CyanEclipseQuill.app"
 
   caveats <<~EOS
     This build is unsigned and not notarized. On first launch macOS
