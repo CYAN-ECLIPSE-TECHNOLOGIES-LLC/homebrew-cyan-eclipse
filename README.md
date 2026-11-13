@@ -31,14 +31,12 @@ Then install what you need.
 
 Formulas install without the --cask flag:
 
-    brew install cyan-eclipse-indigo
+    brew install eclipse-indigo
 
-The first formula in this tap is cyan-eclipse-indigo: the Cyan Eclipse
-Indigo MCP server, a command-line build pinned to its release artefact by
-checksum like everything else here. It joins the tap with Indigo's first
-tap release — if brew reports the formula unavailable, that release has
-not landed yet. More of the firm's command-line servers follow the same
-route.
+The first formula in this tap is eclipse-indigo: the Cyan Eclipse Indigo
+MCP server (v0.2.0), a command-line build pinned to its release artefact
+by checksum like everything else here. More of the firm's command-line
+servers follow the same route.
 
 ## Unsigned builds — read before first launch
 
