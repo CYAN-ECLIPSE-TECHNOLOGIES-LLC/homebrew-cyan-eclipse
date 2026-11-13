@@ -3,8 +3,7 @@
 The Homebrew tap of Cyan Eclipse Technologies LLC. It carries both kinds
 of Homebrew package:
 
-- Casks for our Mac applications (Obscura, Quill, and Muster as its
-  release lands).
+- Casks for our Mac applications (Obscura, Quill, Muster).
 - Formulas for our command-line servers — the first is Cyan Eclipse
   Indigo (see below).
 
@@ -20,14 +19,13 @@ Then install what you need.
 
     brew install --cask cyan-eclipse-obscura
     brew install --cask cyan-eclipse-quill
+    brew install --cask cyan-eclipse-muster
 
 | Cask | Application | Version |
 | --- | --- | --- |
 | cyan-eclipse-obscura | Cyan Eclipse Obscura — mandate-gated remote access client | 0.1.0 |
 | cyan-eclipse-quill | Cyan Eclipse Quill — free AI-native text editor | 0.1.0 |
-
-Cyan Eclipse Muster joins this tap when its first macOS release artefact
-is published.
+| cyan-eclipse-muster | Cyan Eclipse Muster — AI-native calendar decisions, on-device | 0.1.0 |
 
 ## Command-line servers (formulas)
 
