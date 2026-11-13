@@ -4,6 +4,9 @@ name: proof
 # GitHub exactly as a user would, audit every cask, install each one,
 # and confirm the applications land in /Applications.
 # Manual dispatch only — runs cost macOS minutes.
+# NOTE (2026-11-13): the first three dispatches were cancelled by
+# GitHub after ~15 minutes with no runner ever assigned (a new-repo
+# allocation block, not a cask result). Re-dispatch until it runs.
 
 on:
   workflow_dispatch:
@@ -20,7 +23,8 @@ jobs:
         run: |
           brew audit --cask --online \
             cyan-eclipse-technologies-llc/cyan-eclipse/cyan-eclipse-obscura \
-            cyan-eclipse-technologies-llc/cyan-eclipse/cyan-eclipse-quill
+            cyan-eclipse-technologies-llc/cyan-eclipse/cyan-eclipse-quill \
+            cyan-eclipse-technologies-llc/cyan-eclipse/cyan-eclipse-muster
 
       - name: Install Obscura
         run: brew install --cask cyan-eclipse-obscura
@@ -28,9 +32,13 @@ jobs:
       - name: Install Quill
         run: brew install --cask cyan-eclipse-quill
 
+      - name: Install Muster
+        run: brew install --cask cyan-eclipse-muster
+
       - name: Verify applications present
         run: |
           test -d "/Applications/Obscura.app"
           test -d "/Applications/Cyan Eclipse Quill.app"
-          ls -la /Applications | grep -E "Obscura|Quill"
-          echo "PROOF OK: both applications installed from the published tap"
+          test -d "/Applications/CyanEclipseMuster.app"
+          ls -la /Applications | grep -E "Obscura|Quill|Muster"
+          echo "PROOF OK: all applications installed from the published tap"
