@@ -23,6 +23,12 @@ cask "cyan-eclipse-muster" do
   desc "AI-native calendar decisions with checkable records; on-device (unsigned build)"
   homepage "https://cetech.ai"
 
+  livecheck do
+    url "https://github.com/CYAN-ECLIPSE-TECHNOLOGIES-LLC/homebrew-cyan-eclipse/releases"
+    regex(/muster[ -]v?(\d+(?:\.\d+)+)/i)
+    strategy :github_releases
+  end
+
   depends_on macos: ">= :sonoma"
 
   app "CyanEclipseMuster.app"
