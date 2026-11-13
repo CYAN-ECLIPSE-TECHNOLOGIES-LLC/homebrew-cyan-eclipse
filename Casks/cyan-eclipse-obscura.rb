@@ -13,6 +13,12 @@ cask "cyan-eclipse-obscura" do
   desc "Mandate-gated remote access client (unsigned, unnotarized build)"
   homepage "https://cetech.ai"
 
+  livecheck do
+    url "https://github.com/CYAN-ECLIPSE-TECHNOLOGIES-LLC/homebrew-cyan-eclipse/releases"
+    regex(/obscura[ -]v?(\d+(?:\.\d+)+)/i)
+    strategy :github_releases
+  end
+
   depends_on macos: ">= :ventura"
 
   app "Obscura.app"
