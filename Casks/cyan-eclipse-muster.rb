@@ -1,9 +1,13 @@
 # Cyan Eclipse Muster (Mac face) — the firm's tap cask of record.
 # Artefact: CyanEclipseMuster.app.zip, the Muster Mac lane's release of
-# record (IOS-products- release muster-v0.1.0 at ec73ca3; build run
-# 43449376149, 2026-11-13). 471,440 bytes; sha256 pinned below, doubly
-# attested (the build lane's own .sha256 sidecar and an independent
-# recomputation against the release asset).
+# record (IOS-products- release muster-v0.1.2, 2026-11-14; QA-patterns
+# remainders re-cut — Info.plist version agrees with the release version
+# and the P6 integrity banner ships in the artefact). 489,129 bytes;
+# sha256 pinned below, doubly attested (the release record's asset
+# digest and an independent recomputation against the downloaded asset).
+# Supersedes the muster-v0.1.0 pin (471,440 bytes, 353a959a…). The
+# v0.1.0 install proof (tap run 43530804836) covers only the 0.1.0 byte
+# set; the 0.1.2 pin carries its own targeted re-proof.
 # The product repository is private, so the byte-identical artefact is
 # mirrored on this tap repository's own releases for public download.
 # RECONCILED 2026-11-13: this cask originally pinned the first green
@@ -15,8 +19,8 @@
 # supersedes the 2026-11-09 definition of record, whose :no_check
 # placeholder never published.
 cask "cyan-eclipse-muster" do
-  version "0.1.0"
-  sha256 "353a959a82f6eb2763ed91ba8d6d27f6ea325058765d4291b03e0ad2c42ea7c9"
+  version "0.1.2"
+  sha256 "17d90549940d736cf44bc7b8fdde14d4d108177eca077ea232e905f3a7a8e9e5"
 
   url "https://github.com/CYAN-ECLIPSE-TECHNOLOGIES-LLC/homebrew-cyan-eclipse/releases/download/muster-v#{version}/CyanEclipseMuster.app.zip"
   name "Cyan Eclipse Muster"
