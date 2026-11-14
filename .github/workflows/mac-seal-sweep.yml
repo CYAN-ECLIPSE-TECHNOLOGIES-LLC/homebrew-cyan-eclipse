@@ -1,0 +1,135 @@
+name: mac-seal-sweep
+
+# Mac seal sweep (2026-11-13): probe the OTHER Mac downloads for the
+# Quill v0.1.1 seal defect (signed-but-unsealed bundle -> Gatekeeper
+# "modified or damaged"). For each artefact: download the exact bytes
+# of record, verify sha256 in-job, then codesign --verify --deep
+# --strict in place AND copied to /Applications, codesign -dvvv
+# summary, spctl, xattrs, and a bounded launch attempt (25 s guard —
+# unguarded `open` on a quarantined app hangs headless runners).
+# Manual dispatch only — runs cost macOS minutes.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sweep:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - name: Probe all three artefacts
+        run: |
+          set +e
+          mkdir -p logs work
+          probe_app() {
+            # $1 = label, $2 = app path, $3 = binary name for pgrep
+            local LABEL="$1" APP="$2" BIN="$3"
+            {
+              echo "===== $LABEL : $APP ====="
+              ls -ld "$APP"
+              echo "--- codesign --verify --deep --strict --verbose=4 ---"
+              codesign --verify --deep --strict --verbose=4 "$APP" 2>&1; echo "exit=$?"
+              echo "--- codesign -dvvv (summary lines) ---"
+              codesign -dvvv "$APP" 2>&1 | grep -E '^(Executable|Identifier|Format|CodeDirectory|Signature|Info\.plist|TeamIdentifier|Sealed Resources|CDHash|Authority|Timestamp)' 
+              echo "--- spctl -a -vv --type execute ---"
+              spctl -a -vv --type execute "$APP" 2>&1; echo "exit=$?"
+              echo "--- xattr -l app ---"
+              xattr -l "$APP" 2>&1 || echo "(none)"
+              echo "--- xattr -lr app (recursive, first 20) ---"
+              xattr -lr "$APP" 2>&1 | head -20
+            } 2>&1
+          }
+          launch_app() {
+            # $1 = label, $2 = app path in /Applications, $3 = binary name
+            local LABEL="$1" APP="$2" BIN="$3"
+            {
+              echo "===== LAUNCH $LABEL : $APP ====="
+              echo "--- stamp Safari-style quarantine (browser-download state) ---"
+              xattr -w com.apple.quarantine "0181;00000000;Safari;" "$APP" 2>&1; echo "exit=$?"
+              xattr -l "$APP" 2>&1 || true
+              echo "--- bounded open (25s guard) ---"
+              open "$APP" & OPID=$!
+              for i in $(seq 1 25); do kill -0 $OPID 2>/dev/null || break; sleep 1; done
+              if kill -0 $OPID 2>/dev/null; then echo "open: still blocked after 25s — Gatekeeper assessment dialog class (headless cannot render it)"; kill $OPID 2>/dev/null; fi
+              wait $OPID 2>/dev/null; echo "open exit=$?"
+              sleep 3
+              pgrep -fl "$BIN" || echo "no process after open"
+              echo "--- direct binary launch (bounded 10s) ---"
+              "$APP/Contents/MacOS/$BIN" & BPID=$!
+              sleep 5
+              if kill -0 $BPID 2>/dev/null; then echo "binary: process RUNNING (pid $BPID)"; else wait $BPID 2>/dev/null; echo "binary: exited, code=$?"; fi
+              pgrep -fl "$BIN" || echo "no process on pgrep"
+              pkill -f "$BIN" 2>/dev/null || true
+              sleep 1
+            } 2>&1
+          }
+
+          echo "== runner =="; sw_vers; uname -m
+
+          ######## MUSTER ########
+          {
+            echo "######## MUSTER v0.1.2 (tap cask artefact) ########"
+            cd work && mkdir muster && cd muster
+            curl -sL -o muster.zip "https://github.com/CYAN-ECLIPSE-TECHNOLOGIES-LLC/homebrew-cyan-eclipse/releases/download/muster-v0.1.2/CyanEclipseMuster.app.zip"; echo "curl exit=$?"
+            ls -la muster.zip; shasum -a 256 muster.zip
+            echo "expected: 17d90549940d736cf44bc7b8fdde14d4d108177eca077ea232e905f3a7a8e9e5"
+            echo "--- xattr on downloaded zip ---"; xattr -l muster.zip || echo "(none)"
+            unzip -q muster.zip; ls -la
+            cd ../..
+          } 2>&1 | tee logs/muster-download.txt
+          APP="work/muster/CyanEclipseMuster.app"
+          probe_app "MUSTER in-place" "$APP" "CyanEclipseMuster" 2>&1 | tee logs/muster-inplace.txt
+          ditto "$APP" "/Applications/CyanEclipseMuster.app" 2>&1
+          probe_app "MUSTER /Applications" "/Applications/CyanEclipseMuster.app" "CyanEclipseMuster" 2>&1 | tee logs/muster-apps.txt
+          launch_app "MUSTER" "/Applications/CyanEclipseMuster.app" "CyanEclipseMuster" 2>&1 | tee logs/muster-launch.txt
+
+          ######## OBSCURA ########
+          {
+            echo "######## OBSCURA v0.1.0 (tap cask artefact) ########"
+            cd work && mkdir obscura && cd obscura
+            curl -sL -o obscura.zip "https://github.com/CYAN-ECLIPSE-TECHNOLOGIES-LLC/homebrew-cyan-eclipse/releases/download/obscura-v0.1.0/CyanEclipse-Obscura-macOS-0.1.0-UNSIGNED.zip"; echo "curl exit=$?"
+            ls -la obscura.zip; shasum -a 256 obscura.zip
+            echo "expected: 89d459e1d183cf7cc115485c4b5cebc1400bdce8e4bb0f452f79eb92a456beea"
+            echo "--- xattr on downloaded zip ---"; xattr -l obscura.zip || echo "(none)"
+            unzip -q obscura.zip; ls -la; find . -maxdepth 3 -name '*.app'
+            cd ../..
+          } 2>&1 | tee logs/obscura-download.txt
+          APP=$(find work/obscura -maxdepth 3 -name '*.app' | head -1)
+          echo "obscura app: $APP"
+          probe_app "OBSCURA in-place" "$APP" "Obscura" 2>&1 | tee logs/obscura-inplace.txt
+          ditto "$APP" "/Applications/Obscura.app" 2>&1
+          probe_app "OBSCURA /Applications" "/Applications/Obscura.app" "Obscura" 2>&1 | tee logs/obscura-apps.txt
+          BIN=$(basename "$(ls /Applications/Obscura.app/Contents/MacOS/ | head -1)")
+          echo "obscura binary: $BIN"
+          launch_app "OBSCURA" "/Applications/Obscura.app" "$BIN" 2>&1 | tee logs/obscura-launch.txt
+
+          ######## MONOCLE ########
+          {
+            echo "######## MONOCLE v0.1.0 DMG (probe-key copy of the staged ship artefact) ########"
+            cd work && mkdir monocle && cd monocle
+            curl -sL -o monocle.dmg "https://pub-f66188d686c844b4a8499ca3b2a544cd.r2.dev/probe/mac-seal-sweep-20261113/CyanEclipse-Monocle-macOS-0.1.0.dmg"; echo "curl exit=$?"
+            ls -la monocle.dmg; shasum -a 256 monocle.dmg
+            echo "expected: 27f3d68b680748ffacc8c653197ee5c60bb796d09a64150b1effd5cfd65bdc8b"
+            echo "--- xattr on downloaded dmg ---"; xattr -l monocle.dmg || echo "(none)"
+            hdiutil attach monocle.dmg -nobrowse -readonly -mountpoint /tmp/monocle-mnt; echo "attach exit=$?"
+            ls -la /tmp/monocle-mnt/
+            cd ../..
+          } 2>&1 | tee logs/monocle-download.txt
+          APP=$(find /tmp/monocle-mnt -maxdepth 2 -name '*.app' | head -1)
+          echo "monocle app: $APP"
+          probe_app "MONOCLE in-image" "$APP" "CyanEclipseMonocle" 2>&1 | tee logs/monocle-inplace.txt
+          ditto "$APP" "/Applications/$(basename "$APP")" 2>&1
+          MAPP="/Applications/$(basename "$APP")"
+          probe_app "MONOCLE /Applications" "$MAPP" "CyanEclipseMonocle" 2>&1 | tee logs/monocle-apps.txt
+          BIN=$(basename "$(ls "$MAPP/Contents/MacOS/" | head -1)")
+          echo "monocle binary: $BIN"
+          launch_app "MONOCLE" "$MAPP" "$BIN" 2>&1 | tee logs/monocle-launch.txt
+          hdiutil detach /tmp/monocle-mnt 2>&1 || true
+
+          echo "SWEEP DONE"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mac-seal-sweep-logs
+          path: logs/
+          if-no-files-found: warn
