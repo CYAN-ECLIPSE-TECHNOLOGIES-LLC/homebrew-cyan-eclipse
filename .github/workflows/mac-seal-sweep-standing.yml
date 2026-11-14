@@ -125,12 +125,19 @@ jobs:
               [ "$KIND" = "dmg" ] && hdiutil detach "/tmp/mnt-$LABEL" >/dev/null 2>&1
               return
             fi
-            probe_app "$LABEL in-place" "$APP" 2>&1 | tee "logs/$LABEL-inplace.txt"
+            # NOTE: probe_app must NOT be piped (e.g. through tee) — a
+            # pipeline runs it in a subshell and P_OK never reaches this
+            # shell (run 43555207275 false-stamped every target
+            # SEAL-INVALID with empty exit values while the logs showed
+            # verify exit=0). Redirect to the log file instead.
+            probe_app "$LABEL in-place" "$APP" > "logs/$LABEL-inplace.txt" 2>&1
+            cat "logs/$LABEL-inplace.txt"
             local OK1=$P_OK
             local DEST="/Applications/$(basename "$APP")"
             rm -rf "$DEST"
             ditto "$APP" "$DEST" 2>&1
-            probe_app "$LABEL /Applications" "$DEST" 2>&1 | tee "logs/$LABEL-apps.txt"
+            probe_app "$LABEL /Applications" "$DEST" > "logs/$LABEL-apps.txt" 2>&1
+            cat "logs/$LABEL-apps.txt"
             local OK2=$P_OK
             # spctl class from the /Applications probe log
             local SPCTL_LINE
