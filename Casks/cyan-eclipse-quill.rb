@@ -1,14 +1,14 @@
 # Cyan Eclipse Quill (macOS) — the firm's tap cask of record.
-# Artefacts: the unsigned, unnotarized DMGs of record for v0.1.0,
+# Artefacts: the unsigned, unnotarized DMGs of record for v0.1.1,
 # served from the firm's public downloads (the same files the
 # cetech.ai download links serve). sha256 values pinned per arch and
 # verified against both the build artefacts and the served bytes.
 cask "cyan-eclipse-quill" do
   arch arm: "arm64", intel: "x64"
 
-  version "0.1.0"
-  sha256 arm:   "7f40fc5e7a1fe9a7ba7e006a1bb3073331caa6623a39bfb09c98257f49d1ee4d",
-         intel: "57dadf844719e3a0190656a5bedec3c60353937f93fe10a087611d02e29963e0"
+  version "0.1.1"
+  sha256 arm:   "bf54f0f59bcbedb2cc3639c768076294956b8f8ae889d6407b211176c19f86ae",
+         intel: "78dbad40c1b0e0eb56698c8e5fece796207e6ad23a67cb4192d56aa8715d98e6"
 
   url "https://pub-f66188d686c844b4a8499ca3b2a544cd.r2.dev/downloads/quill/#{version}/cyan-eclipse-quill-v#{version}-mac-#{arch}.dmg"
   name "Cyan Eclipse Quill"
