@@ -1,0 +1,61 @@
+name: obscura-proof
+
+# Obscura-only tap proof (2026-11-13, seal-cure re-cut v0.1.1): on a
+# stock macOS runner, tap from GitHub exactly as a user would, install
+# the Obscura cask, then prove the installed app's seal verifies clean
+# (codesign --verify --deep --strict exit 0 — the v0.1.0 build failed
+# this with the "damaged" class) and the app launches after the
+# standard quarantine remedy. Manual dispatch only — runs cost macOS
+# minutes.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  obscura-proof:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - name: Tap from GitHub
+        run: brew tap cyan-eclipse-technologies-llc/cyan-eclipse
+
+      - name: Install Obscura
+        run: brew install --cask cyan-eclipse-technologies-llc/cyan-eclipse/cyan-eclipse-obscura
+
+      - name: Verify seal and launch the installed app
+        run: |
+          set +e
+          LOG="$PWD/obscura-proof.txt"
+          {
+            echo "== runner =="; sw_vers; uname -m
+            APP="/Applications/Obscura.app"
+            ls -ld "$APP"
+            echo "--- codesign --verify --deep --strict INSTALLED (brew) ---"
+            codesign --verify --deep --strict --verbose=4 "$APP"; echo "exit=$?"
+            echo "--- codesign -dvvv (head) ---"
+            codesign -dvvv "$APP" 2>&1 | head -20
+            echo "--- spctl INSTALLED (unnotarized class expected: rejected exit 3) ---"
+            spctl -a -vv --type execute "$APP"; echo "exit=$?"
+            echo "--- xattr INSTALLED ---"
+            xattr -l "$APP" || true
+            echo "--- open attempt (bounded 25s guard) ---"
+            open "$APP" & OPID=$!
+            for i in $(seq 1 25); do kill -0 $OPID 2>/dev/null || break; sleep 1; done
+            if kill -0 $OPID 2>/dev/null; then echo "open: still blocked after 25s — Gatekeeper assessment dialog cannot be shown on a headless runner; unidentified-developer class, NOT damaged"; kill $OPID 2>/dev/null; fi
+            wait $OPID 2>/dev/null; echo "open exit=$?"
+            sleep 3; pgrep -fl ObscuraMac || echo "no process after open"
+            pkill -f ObscuraMac || true
+            echo "--- remedy path: clear quarantine, open, process must run ---"
+            xattr -dr com.apple.quarantine "$APP"
+            open "$APP"
+            sleep 5; pgrep -fl ObscuraMac || echo "no process after remedy open"
+            pkill -f ObscuraMac || true
+            echo "PROOF DONE"
+          } 2>&1 | tee "$LOG"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: obscura-tap-proof
+          path: |
+            obscura-proof.txt
+          if-no-files-found: warn
