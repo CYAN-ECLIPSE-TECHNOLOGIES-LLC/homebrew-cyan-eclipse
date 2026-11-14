@@ -2,15 +2,15 @@
 #
 # Formula (command-line tool class), not a cask: Indigo's server is a
 # Python stdio program with no macOS app bundle; the Indigo app itself
-# is iOS. The source tarball is the eclipse-indigo-mcp v0.2.0 tag,
+# is iOS. The source tarball is the eclipse-indigo-mcp v0.2.1 tag,
 # mirrored onto this tap's releases because the product repo is
 # private and its release assets are not anonymously downloadable
 # (the same pattern as the Obscura cask in this tap).
 class EclipseIndigo < Formula
   desc "Mail-governance MCP server: identity verdicts, inert drafts, token-gated sends"
   homepage "https://cetech.ai"
-  url "https://github.com/CYAN-ECLIPSE-TECHNOLOGIES-LLC/homebrew-cyan-eclipse/releases/download/indigo-v0.2.0/eclipse-indigo-0.2.0.tar.gz"
-  sha256 "83b6b5001e608aed000f29fa3395afb880bbb95f5b6c9eac5b7be16fa44cfd01"
+  url "https://github.com/CYAN-ECLIPSE-TECHNOLOGIES-LLC/homebrew-cyan-eclipse/releases/download/indigo-v0.2.1/eclipse-indigo-0.2.1.tar.gz"
+  sha256 "4f707f413e036d89b711f2a49ef6c87b86336ca1425c2289c47f4b6b1a19c922"
   license "MIT"
 
   depends_on "python@3.13"
