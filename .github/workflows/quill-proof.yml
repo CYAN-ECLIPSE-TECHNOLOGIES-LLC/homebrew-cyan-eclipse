@@ -1,0 +1,56 @@
+name: quill-proof
+
+# Quill-only tap proof (2026-11-13, signature-cure re-cut): on a stock
+# macOS runner, tap from GitHub exactly as a user would, install the
+# Quill cask, then prove the installed app's seal verifies clean and
+# the app launches. Manual dispatch only — runs cost macOS minutes.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  quill-proof:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - name: Tap from GitHub
+        run: brew tap cyan-eclipse-technologies-llc/cyan-eclipse
+
+      - name: Install Quill
+        run: brew install --cask cyan-eclipse-technologies-llc/cyan-eclipse/cyan-eclipse-quill
+
+      - name: Verify seal and launch the installed app
+        run: |
+          set +e
+          LOG="$PWD/quill-proof.txt"
+          {
+            echo "== runner =="; sw_vers; uname -m
+            APP="/Applications/CyanEclipseQuill.app"
+            ls -ld "$APP"
+            echo "--- codesign --verify --deep --strict INSTALLED (brew) ---"
+            codesign --verify --deep --strict --verbose=4 "$APP"; echo "exit=$?"
+            echo "--- codesign -dvvv (head) ---"
+            codesign -dvvv "$APP" 2>&1 | head -20
+            echo "--- spctl INSTALLED ---"
+            spctl -a -vv --type execute "$APP"; echo "exit=$?"
+            echo "--- xattr INSTALLED ---"
+            xattr -l "$APP" || true
+            echo "--- open attempt ---"
+            open "$APP"; echo "open exit=$?"
+            sleep 3; pgrep -fl CyanEclipseQuill || echo "no process after open"
+            pkill -f CyanEclipseQuill || true
+            echo "--- direct binary launch, capture mode ---"
+            QUILL_CAPTURE_OUT="$PWD/frame-tap-proof.png" "$APP/Contents/MacOS/CyanEclipseQuill" --disable-gpu &
+            for i in $(seq 1 60); do [ -f frame-tap-proof.png ] && break; sleep 1; done
+            ls -la frame-tap-proof.png || echo "no frame produced"
+            pkill -f CyanEclipseQuill || true
+            echo "PROOF DONE"
+          } 2>&1 | tee "$LOG"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: quill-tap-proof
+          path: |
+            quill-proof.txt
+            frame-tap-proof.png
+          if-no-files-found: warn
