@@ -1,17 +1,19 @@
 # Cyan Eclipse Quill (macOS) — the firm's tap cask of record.
-# Artefacts: the ad-hoc-signed, unnotarized DMGs of record for v0.1.2,
+# Artefacts: the ad-hoc-signed, unnotarized DMGs of record for v0.1.3,
 # served from the firm's public downloads (the same files the
 # cetech.ai download links serve). sha256 values pinned per arch and
 # verified against both the build artefacts and the served bytes.
 # v0.1.2 is the signature cure: the bundle is sealed (ad-hoc) and
 # verifies codesign --verify --deep --strict clean; v0.1.1 shipped
-# unsealed and Gatekeeper called it "damaged".
+# unsealed and Gatekeeper called it "damaged". v0.1.3 cures the
+# packaged splash screen, which never loaded in packaged builds
+# (its brand path resolved outside the bundle).
 cask "cyan-eclipse-quill" do
   arch arm: "arm64", intel: "x64"
 
-  version "0.1.2"
-  sha256 arm:   "e3b4aa8155b08d768584a98c2acdc15bd3b2abb6ef7229e534cac78c47ba75c2",
-         intel: "d332d14efa18cdcf7351b8b0d30407302629ef532d0c410983c3813b9c30c591"
+  version "0.1.3"
+  sha256 arm:   "441722d62e029fa2e033110007749c8abfce859737e1c47435bb5f9271f5f8d7",
+         intel: "2a2e8dbabba515f3b90ccc75fea7b61d725098c39f46dd74f83410b90e1bc4f6"
 
   url "https://pub-f66188d686c844b4a8499ca3b2a544cd.r2.dev/downloads/quill/#{version}/cyan-eclipse-quill-v#{version}-mac-#{arch}.dmg"
   name "Cyan Eclipse Quill"
