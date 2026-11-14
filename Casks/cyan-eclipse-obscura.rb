@@ -1,16 +1,16 @@
 # Cyan Eclipse Obscura (macOS client) — the firm's tap cask of record.
-# Artefact: the ad-hoc signed, unnotarized build of record for v0.1.2
-# (373,059 bytes, sha256 pinned below; round-2 QA cure 2026-11-14 —
+# Artefact: the ad-hoc signed, unnotarized build of record for v0.1.3
+# (372,486 bytes, sha256 pinned below; round-2 QA cure + H3 failure-boundary re-cut 2026-11-14 —
 # the bundle is codesign-sealed at packaging and verifies
-# codesign --verify --deep --strict clean in CI run 43652844291;
+# codesign --verify --deep --strict clean in CI run 43654244976;
 # v0.1.0 shipped signed-but-unsealed and Gatekeeper classed it
 # "damaged", cured from v0.1.1 on).
 # The product repository is private, so the byte-identical artefact is
 # published on this tap repository's own releases for public download.
 # The release of record also exists on the product repository.
 cask "cyan-eclipse-obscura" do
-  version "0.1.2"
-  sha256 "e1843417016baf22110c3452189fe547d6cee2ab64655bda4df8c0da058b74d7"
+  version "0.1.3"
+  sha256 "fc189fd62094c0cfd77edbc3b02723d69a7ceced81bae72a69b43ae437f24769"
 
   url "https://github.com/CYAN-ECLIPSE-TECHNOLOGIES-LLC/homebrew-cyan-eclipse/releases/download/obscura-v#{version}/CyanEclipse-Obscura-macOS-#{version}.zip"
   name "Cyan Eclipse Obscura"
