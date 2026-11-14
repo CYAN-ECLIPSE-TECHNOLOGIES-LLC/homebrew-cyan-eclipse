@@ -1,0 +1,166 @@
+name: mac-seal-sweep-standing
+
+# Standing Mac seal sweep (Sealgate law, owner directive 2026-11-13;
+# QA-PATTERNS P9, IP §A126). Weekly backstop + on-version-bump runs,
+# driven by the mac-seal-sweep cron (goal verity-bench-flow-recovery),
+# which reads the CURRENT pins from the tap casks + cetech.ai dl.php
+# and passes them as dispatch inputs. Defaults below = pins of record
+# at adoption (2026-11-13). Probe set = every live Mac artifact:
+#   1-2. Quill macOS DMGs as served by cetech.ai dl.php (quill-mac-arm,
+#        quill-mac) — the same R2 bytes the Quill cask pins.
+#   3.   Muster cask artefact (tap release mirror).
+#   4.   Obscura cask artefact (tap release mirror).
+#   5.   Monocle staged ship candidate DMG, fetched from a PROBE-ONLY
+#        R2 key the cron refreshes from the staged file before each
+#        run (never the ship key; nothing is published by this sweep).
+# For each: sha256 verified in-job against the expected pin, then
+# codesign --verify --deep --strict in place AND copied to
+# /Applications, codesign -dvvv summary, spctl class. The job FAILS
+# (exit 1) if any target is SEAL-INVALID (the damaged class) or its
+# bytes do not match the expected pin. A clean unnotarized build is
+# spctl exit=3 "rejected" — that is the expected PASS class until
+# Apple enrollment; exit=1 with "code has no resources but signature
+# indicates they must be present" is the damaged class this gate bars.
+
+on:
+  workflow_dispatch:
+    inputs:
+      quill_arm_sha:
+        description: "Expected sha256, Quill arm64 DMG (dl.php quill-mac-arm)"
+        required: true
+        default: "441722d62e029fa2e033110007749c8abfce859737e1c47435bb5f9271f5f8d7"
+      quill_x64_sha:
+        description: "Expected sha256, Quill x64 DMG (dl.php quill-mac)"
+        required: true
+        default: "2a2e8dbabba515f3b90ccc75fea7b61d725098c39f46dd74f83410b90e1bc4f6"
+      muster_sha:
+        description: "Expected sha256, Muster cask artefact"
+        required: true
+        default: "99d11ce63719be8bec6450a1257a5e28026037eab6d91c31f4c0b1a8aa30221e"
+      muster_url:
+        description: "Muster cask artefact URL"
+        required: true
+        default: "https://github.com/CYAN-ECLIPSE-TECHNOLOGIES-LLC/homebrew-cyan-eclipse/releases/download/muster-v0.1.3/CyanEclipseMuster.app.zip"
+      obscura_sha:
+        description: "Expected sha256, Obscura cask artefact"
+        required: true
+        default: "b4cb948a5d27651da4277220ea59f4fd47c3be96f5a913d684b044f9d4d3d380"
+      obscura_url:
+        description: "Obscura cask artefact URL"
+        required: true
+        default: "https://github.com/CYAN-ECLIPSE-TECHNOLOGIES-LLC/homebrew-cyan-eclipse/releases/download/obscura-v0.1.1/CyanEclipse-Obscura-macOS-0.1.1.zip"
+      monocle_sha:
+        description: "Expected sha256, Monocle staged ship candidate DMG"
+        required: true
+        default: "2477cc8df5e2e5d4bb135f6282a7fbe31157c7034ff1d5da787945e4b38cdc5a"
+      monocle_url:
+        description: "Monocle probe-key DMG URL (probe-only, refreshed by the cron)"
+        required: true
+        default: "https://pub-f66188d686c844b4a8499ca3b2a544cd.r2.dev/probe/mac-seal-sweep-standing/CyanEclipse-Monocle-macOS-0.1.1.dmg"
+
+jobs:
+  sweep:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - name: Probe all live Mac artifacts
+        run: |
+          set +e
+          mkdir -p logs work
+          : > summary.txt
+          FAILFLAG=0
+
+          verdict() { # $1 label, $2 verdict, $3 detail
+            echo "TARGET $1 VERDICT $2 $3" | tee -a summary.txt
+            [ "$2" = "SEAL-VALID" ] || FAILFLAG=1
+          }
+
+          probe_app() {
+            # $1 label, $2 app path — echoes probe log; sets P_OK (0/1)
+            local LABEL="$1" APP="$2"
+            {
+              echo "===== $LABEL : $APP ====="
+              ls -ld "$APP"
+              echo "--- codesign --verify --deep --strict --verbose=4 ---"
+              codesign --verify --deep --strict --verbose=4 "$APP" 2>&1; echo "exit=$?"
+              echo "--- codesign -dvvv (summary lines) ---"
+              codesign -dvvv "$APP" 2>&1 | grep -E '^(Executable|Identifier|Format|CodeDirectory|Signature|Info\.plist|TeamIdentifier|Sealed Resources|CDHash|Authority|Timestamp)'
+              echo "--- spctl -a -vv --type execute ---"
+              spctl -a -vv --type execute "$APP" 2>&1; echo "exit=$?"
+            }
+            codesign --verify --deep --strict "$APP" >/dev/null 2>&1
+            P_OK=$?
+          }
+
+          probe_target() {
+            # $1 label, $2 download URL, $3 expected sha, $4 kind (dmg|zip)
+            local LABEL="$1" URL="$2" EXP="$3" KIND="$4"
+            local DIR="work/$LABEL"
+            mkdir -p "$DIR"
+            {
+              echo "######## $LABEL ########"
+              echo "url: $URL"
+              echo "expected sha256: $EXP"
+              curl -sL -o "$DIR/artifact" "$URL"; echo "curl exit=$?"
+              ls -la "$DIR/artifact"
+              GOT=$(shasum -a 256 "$DIR/artifact" | awk '{print $1}')
+              echo "got sha256: $GOT"
+            } 2>&1 | tee "logs/$LABEL-download.txt"
+            GOT=$(shasum -a 256 "$DIR/artifact" | awk '{print $1}')
+            if [ "$GOT" != "$EXP" ]; then
+              verdict "$LABEL" "PIN-MISMATCH" "expected=$EXP got=$GOT"
+              return
+            fi
+            local APP=""
+            if [ "$KIND" = "dmg" ]; then
+              hdiutil attach "$DIR/artifact" -nobrowse -readonly -mountpoint "/tmp/mnt-$LABEL" >>"logs/$LABEL-download.txt" 2>&1
+              APP=$(find "/tmp/mnt-$LABEL" -maxdepth 2 -name '*.app' | head -1)
+            else
+              (cd "$DIR" && unzip -q artifact) >>"logs/$LABEL-download.txt" 2>&1
+              APP=$(find "$DIR" -maxdepth 3 -name '*.app' | head -1)
+            fi
+            echo "$LABEL app: $APP" | tee -a "logs/$LABEL-download.txt"
+            if [ -z "$APP" ]; then
+              verdict "$LABEL" "NO-APP-FOUND" "kind=$KIND"
+              [ "$KIND" = "dmg" ] && hdiutil detach "/tmp/mnt-$LABEL" >/dev/null 2>&1
+              return
+            fi
+            probe_app "$LABEL in-place" "$APP" 2>&1 | tee "logs/$LABEL-inplace.txt"
+            local OK1=$P_OK
+            local DEST="/Applications/$(basename "$APP")"
+            rm -rf "$DEST"
+            ditto "$APP" "$DEST" 2>&1
+            probe_app "$LABEL /Applications" "$DEST" 2>&1 | tee "logs/$LABEL-apps.txt"
+            local OK2=$P_OK
+            # spctl class from the /Applications probe log
+            local SPCTL_LINE
+            SPCTL_LINE=$(grep -A1 'spctl -a -vv' "logs/$LABEL-apps.txt" | tail -1)
+            echo "$LABEL spctl(/Applications): $SPCTL_LINE" | tee -a summary.txt
+            if [ "$OK1" = "0" ] && [ "$OK2" = "0" ]; then
+              verdict "$LABEL" "SEAL-VALID" "codesign verify clean both positions"
+            else
+              verdict "$LABEL" "SEAL-INVALID" "codesign verify exit inplace=$OK1 applications=$OK2 (damaged class bars ship/list)"
+            fi
+            [ "$KIND" = "dmg" ] && hdiutil detach "/tmp/mnt-$LABEL" >/dev/null 2>&1
+            true
+          }
+
+          echo "== runner =="; sw_vers; uname -m
+
+          probe_target "quill-arm64-dlphp" "https://cetech.ai/dl.php?a=quill-mac-arm" "${{ inputs.quill_arm_sha }}" dmg
+          probe_target "quill-x64-dlphp"   "https://cetech.ai/dl.php?a=quill-mac"     "${{ inputs.quill_x64_sha }}" dmg
+          probe_target "muster-cask"       "${{ inputs.muster_url }}"                 "${{ inputs.muster_sha }}" zip
+          probe_target "obscura-cask"      "${{ inputs.obscura_url }}"                "${{ inputs.obscura_sha }}" zip
+          probe_target "monocle-staged"    "${{ inputs.monocle_url }}"                "${{ inputs.monocle_sha }}" dmg
+
+          echo "===== SUMMARY ====="
+          cat summary.txt
+          cp summary.txt logs/summary.txt
+          echo "SWEEP DONE failflag=$FAILFLAG"
+          exit $FAILFLAG
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mac-seal-sweep-standing-logs
+          path: logs/
+          if-no-files-found: warn
