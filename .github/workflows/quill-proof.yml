@@ -36,7 +36,10 @@ jobs:
             echo "--- xattr INSTALLED ---"
             xattr -l "$APP" || true
             echo "--- open attempt ---"
-            open "$APP"; echo "open exit=$?"
+            open "$APP" & OPID=$!
+            for i in $(seq 1 25); do kill -0 $OPID 2>/dev/null || break; sleep 1; done
+            if kill -0 $OPID 2>/dev/null; then echo "open: still blocked after 25s — Gatekeeper assessment dialog cannot be shown on a headless runner; treating as the refusal class and moving on"; kill $OPID 2>/dev/null; fi
+            wait $OPID 2>/dev/null; echo "open exit=$?"
             sleep 3; pgrep -fl CyanEclipseQuill || echo "no process after open"
             pkill -f CyanEclipseQuill || true
             echo "--- direct binary launch, capture mode ---"
