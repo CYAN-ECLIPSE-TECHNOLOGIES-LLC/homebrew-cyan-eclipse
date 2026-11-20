@@ -1,18 +1,21 @@
 # Cyan Eclipse Muster (Mac face) — the firm's tap cask of record.
 # Artefact: CyanEclipseMuster.app.zip, the Muster Mac lane's release of
-# record (IOS-products- release muster-v0.1.3, 2026-11-14; the seal
-# cure — the packaging workflow ad-hoc signs the whole bundle as its
+# record (IOS-products- release muster-v0.1.4, 2026-11-20; the splash
+# release — the Mac face implements the Cyan Eclipse standard splash,
+# MUS-SPLASH-001 / OPS-181, with the splash-presence gate in the build
+# path. The packaging workflow ad-hoc signs the whole bundle as its
 # final step before zipping, so the artefact verifies codesign
-# --deep --strict clean and sits in the unnotarized class). 490,503
+# --deep --strict clean and sits in the unnotarized class). 924,733
 # bytes; sha256 pinned below, measured on the runner and re-verified
-# after download. Supersedes the muster-v0.1.2 pin (489,129 bytes,
-# 17d90549…), which shipped signed-but-unsealed and Gatekeeper called
-# "damaged"; v0.1.2 must not be distributed.
+# after download. Supersedes the muster-v0.1.3 pin (490,503 bytes,
+# 99d11ce6…). The muster-v0.1.2 pin (489,129 bytes, 17d90549…)
+# shipped signed-but-unsealed and Gatekeeper called it "damaged";
+# v0.1.2 must not be distributed.
 # The product repository is private, so the byte-identical artefact is
 # mirrored on this tap repository's own releases for public download.
 cask "cyan-eclipse-muster" do
-  version "0.1.3"
-  sha256 "99d11ce63719be8bec6450a1257a5e28026037eab6d91c31f4c0b1a8aa30221e"
+  version "0.1.4"
+  sha256 "a80b0dce03a43d91d18c4fce98be0d2af94cd5eb7a069367058d5682bc7f6973"
 
   url "https://github.com/CYAN-ECLIPSE-TECHNOLOGIES-LLC/homebrew-cyan-eclipse/releases/download/muster-v#{version}/CyanEclipseMuster.app.zip"
   name "Cyan Eclipse Muster"
